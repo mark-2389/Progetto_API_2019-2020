@@ -14,45 +14,45 @@ typedef struct treeNode{
 
 typedef treeNode * tree;
 
-typedef struct ciao{
-	char operazione;		//tipo di operazione
-	int min;				//numero minimo (ind1)
-	int max;				//numero massimo (ind2)
+typedef struct uNode{
+	char operation;			//operation type
+	int min;				//min number (ind1)
+	int max;				//max number (ind2)
 	int nodip;				//numero di nodi appena prima la mossa
-	char ** testiv;			//vettore di puntatori al testo vecchio
-	char ** testin;			//vettore di puntatori al testo nuovo
-	tree * subtree;		//vettore di puntatori al treeNode modificato
-	struct ciao * rsucc;
-	struct ciao * unext;
-} unodo;
+	char ** oldTexts;		//vector of pointers to old texts
+	char ** newTexts;		//vector of pointers to nex texts
+	tree * subtree;			//vettore di puntatori al treeNode modificato
+	struct uNode * rsucc;
+	struct uNode * unext;
+} uNode;
 
 typedef struct totti {
 	int pos;				//posizione nella upila o rpila
 	char type;
-	unodo * diretto;		//accesso diretto allo stato da ripristinare
+	uNode * diretto;		//accesso diretto allo stato da ripristinare
 	struct totti * rdel;
 	struct totti * udel;
 } del;
 
 typedef del * photo;
-typedef unodo * upila;		//pila fatta di nodi per ogni operazione di modifica della struttura
-typedef unodo * rpila;		//coda delle operazioni di redo possibili
+typedef uNode * undoStack;		//this stack keeps track of all the modifying operation to the main structure (i.e. tree)
+typedef uNode * redoStack;		//this stack keeps track of all the operations that con be re-executed after an undo
 
 						/*-------------------------*/
 						/* PROTOTIPI DELLE FUNZIONI*/
 						/*-------------------------*/
 
 tree Cancella ( tree tree, treeNode * canc );
-photo CercaProx ( photo * backup, upila * ustack, upila * rstack, int unodi, int rnodi, int * mosse );
+photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int unodi, int rnodi, int * mosse );
 tree CreaNodo ( char * testo, tree Tnull );
-photo dPush ( photo dlista, upila direct, int sum );
+photo dPush ( photo dlista, undoStack direct, int sum );
 tree eliminaNodoRosso ( tree tree, tree father, treeNode * elimina );
 tree LeftRotate ( tree alto, tree basso );
 tree pInserisci ( tree tree, treeNode * pre, treeNode * neo, int t );
 void print ( tree rb, int min, int max, int nnodi, int * stampati );
-upila Push ( upila stack, char op, int min, int max, int nnodi );
+undoStack Push ( undoStack stack, char op, int min, int max, int nnodi );
 int RaccogliIstr ( int * ind1, int * ind2, int * mosse, int * unodi, int * rnodi );
-tree Rigenera ( tree tree, tree Tnull, tree * max, upila stack );
+tree Rigenera ( tree tree, tree Tnull, tree * max, undoStack stack );
 tree RightRotate ( tree alto, tree basso );
 tree Ripara ( tree tree, tree rb );
 tree Riparadx ( tree tree, tree nonno, tree zio, tree father, tree insert );
@@ -61,18 +61,18 @@ tree RiparaNerosx ( tree tree, tree father, tree fratello, tree sost );
 tree Riparasx ( tree tree, tree nonno, tree zio, tree father, tree insert );
 tree trovak ( tree tree, int x, int flap );
 int VerificaFigli ( tree rb );
-void VisitaInOrdine ( tree rb, int min, int max, int nnodi, upila * ustack, int * visitati, int tot );
+void VisitaInOrdine ( tree rb, int min, int max, int nnodi, undoStack * ustack, int * visitati, int tot );
 
 							/*-----------------*/
 							/* INZIO PROGRAMMA*/
 							/*----------------*/
 
-tree Rigenera ( tree tree, tree Tnull, tree * max, upila stack ) {
+tree Rigenera ( tree tree, tree Tnull, tree * max, undoStack stack ) {
 	int i;
 
 	for ( i=0; i<stack->nodip; i++ ) {
 		stack->subtree[i]->colour = 0;
-		stack->subtree[i]->row = stack->testiv[i];
+		stack->subtree[i]->row = stack->oldTexts[i];
 		stack->subtree[i]->father = Tnull;
 		stack->subtree[i]->leftChild = Tnull;
 		stack->subtree[i]->rightChild = Tnull;
@@ -83,7 +83,7 @@ tree Rigenera ( tree tree, tree Tnull, tree * max, upila stack ) {
 	return tree;
 }
 
-void VisitaInOrdine ( tree rb, int min, int max, int nnodi, upila * ustack, int * visitati, int tot ){
+void VisitaInOrdine ( tree rb, int min, int max, int nnodi, undoStack * ustack, int * visitati, int tot ){
 	int count, a;
 	tree temp;
 
@@ -106,19 +106,19 @@ void VisitaInOrdine ( tree rb, int min, int max, int nnodi, upila * ustack, int 
 			return;
 	}
 
-	if ( (*ustack)->operazione == 'c' ) {
-		(*ustack)->testiv[*visitati] = rb->row;
+	if ( (*ustack)->operation == 'c' ) {
+		(*ustack)->oldTexts[*visitati] = rb->row;
 		(*ustack)->subtree[*visitati] = rb;
 		a = *visitati + 1;
 		if ( a >= (*ustack)->min && a <= (*ustack)->max )
-			rb->row = (*ustack)->testin[a-(*ustack)->min];
+			rb->row = (*ustack)->newTexts[a-(*ustack)->min];
 	}
-	else if ( (*ustack)->operazione == 'd' ) {
-		(*ustack)->testiv[*visitati] = rb->row;
+	else if ( (*ustack)->operation == 'd' ) {
+		(*ustack)->oldTexts[*visitati] = rb->row;
 		(*ustack)->subtree[*visitati] = rb;
 	}
-	else if ( (*ustack)->operazione == 'b' )
-		rb->row = (*ustack)->testiv[(*ustack)->min+*visitati-1];
+	else if ( (*ustack)->operation == 'b' )
+		rb->row = (*ustack)->oldTexts[(*ustack)->min+*visitati-1];
 
 
 	*visitati += 1;
@@ -157,7 +157,7 @@ void print ( tree rb, int min, int max, int nnodi, int * stampati ){
 	return print ( rb->rightChild, 1, max-count, nnodi-count, stampati );	//bisogna stampare tutti i nodi da 1 fino a max-count del sottoalbero destro
 }
 
-photo CercaProx ( photo * backup, upila * ustack, upila * rstack, int unodi, int rnodi, int * mosse ){
+photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int unodi, int rnodi, int * mosse ){
 	int a, b, tot=unodi+rnodi+1;
 	photo ptr, temp = *backup;
 
@@ -264,7 +264,7 @@ photo CercaProx ( photo * backup, upila * ustack, upila * rstack, int unodi, int
 	}
 }
 
-photo dPush ( photo dlista, upila direct, int num ) {
+photo dPush ( photo dlista, undoStack direct, int num ) {
 
 	photo temp = ( del * ) malloc ( sizeof ( del ) );
 	temp->diretto = direct;
@@ -279,16 +279,16 @@ photo dPush ( photo dlista, upila direct, int num ) {
 	return temp;
 }
 
-upila Push ( upila stack, char op, int min, int max, int nnodi ){
+undoStack Push ( undoStack stack, char op, int min, int max, int nnodi ){
 
-	unodo * temp = ( unodo * ) calloc ( 1, sizeof ( unodo ) );			//alloco il nuovo unodo
-	temp->operazione = op;												//tipo di operazione
+	uNode * temp = ( uNode * ) calloc ( 1, sizeof ( uNode ) );			//alloco il nuovo uNode
+	temp->operation = op;												//type of operation
 	temp->min = min;													//indirizzo minimo (ind1)
 	temp->max = max;													//indirizzo massimo (ind2)
 	temp->nodip = nnodi;												//numero di nodi prima dell'esecuzione della mossa
 
 	if ( op == 'c' )
-		temp->testin = ( char ** ) malloc ( ( max-min+1 ) * sizeof ( char * ) );
+		temp->newTexts = ( char ** ) malloc ( ( max-min+1 ) * sizeof ( char * ) );
 	if ( stack != NULL )
 		stack->rsucc = temp;
 
@@ -809,7 +809,7 @@ int main (){
 	tree testo = NULL, max = NULL, Tnull, temp;
 	char *c, buff[M];
 	int flag=0, choice=0, start=0, finish=0, mosse=0,  nnodi=0, unodi=0, rnodi=0, i=0, t;
-	upila ustack = NULL, rstack = NULL;
+	undoStack ustack = NULL, rstack = NULL;
 	photo photo=NULL, prova;
 
 	Tnull = ( treeNode * ) calloc ( 1, sizeof ( treeNode ) );
@@ -845,10 +845,10 @@ int main (){
 			i = 0;
 			while ( i < t ){
 				c = fgets ( buff, M, stdin );
-				ustack->testin[i] = ( char * ) malloc ( strlen ( buff ) + 1 );
-				strcpy ( ustack->testin[i], buff );
+				ustack->newTexts[i] = ( char * ) malloc ( strlen ( buff ) + 1 );
+				strcpy ( ustack->newTexts[i], buff );
 				if ( start > nnodi ){
-					temp = CreaNodo ( ustack->testin[i], Tnull );
+					temp = CreaNodo ( ustack->newTexts[i], Tnull );
 					testo = pInserisci ( testo, max, temp, 0 );
 					max = temp;
 					start++;
@@ -860,11 +860,11 @@ int main (){
 			if ( start <= finish ) {
 				photo = dPush ( photo, ustack, unodi );
 				i = 0;
-				ustack->testiv = ( char ** ) malloc ( nnodi * sizeof ( char * ) );
+				ustack->oldTexts = ( char ** ) malloc ( nnodi * sizeof ( char * ) );
 				ustack->subtree = ( tree * ) malloc ( nnodi * sizeof ( tree ) );
 				VisitaInOrdine ( testo, 1, nnodi, nnodi, &ustack, &i, nnodi );
 				while ( nnodi < finish ) {
-					temp = CreaNodo ( ustack->testin[nnodi-start+1], Tnull );
+					temp = CreaNodo ( ustack->newTexts[nnodi-start+1], Tnull );
 					testo = pInserisci ( testo, max, temp, 0 );
 					max = temp;
 					nnodi++;
@@ -896,7 +896,7 @@ int main (){
 			ustack = Push ( ustack, 'd', start, finish, nnodi );
 			unodi++;
 			photo = dPush ( photo, ustack, unodi );
-			ustack->testiv =  ( char ** ) malloc ( nnodi * sizeof ( char * ) );
+			ustack->oldTexts =  ( char ** ) malloc ( nnodi * sizeof ( char * ) );
 			ustack->subtree = ( tree * ) malloc ( nnodi * sizeof ( char * ) );
 			i = 0;
             VisitaInOrdine ( testo, 1, nnodi, nnodi, &ustack, &i, nnodi );
@@ -974,7 +974,7 @@ int main (){
 
 			while ( mosse < 0 && ustack != NULL ) {								//undo
 
-                if ( ustack->operazione == 'c' ) {								//undo di una change
+                if ( ustack->operation == 'c' ) {								//undo di una change
                 	t = ustack->max;
 
                 	if ( t > ustack->nodip )
@@ -984,9 +984,9 @@ int main (){
 					nnodi = ustack->nodip;
 					i = 0;
 					if ( ustack->min <= ustack->nodip ) {
-						ustack->operazione = 'b';
+						ustack->operation = 'b';
 						VisitaInOrdine ( testo, ustack->min, t, nnodi, &ustack, &i, t-ustack->min+1 );
-						ustack->operazione = 'c';
+						ustack->operation = 'c';
 					}
                 }
                 else{												//undo di una delete
@@ -998,14 +998,14 @@ int main (){
                 		testo = Rigenera ( testo, Tnull, &max, ustack );
 					}
                 }
-				rstack = ustack;								//aggiorno la upila e rpila
+				rstack = ustack;								//aggiorno la undoStack e redoStack
 				ustack = ustack->unext;
 				mosse++;
 			}
 
 			while ( mosse > 0 && rstack!=NULL ){		//redo
 
-				if ( rstack->operazione == 'c' ){		//devo rieseguire una change
+				if ( rstack->operation == 'c' ){		//devo rieseguire una change
 
 					if ( rstack->min <= rstack->nodip ) {
 						i = 0;
@@ -1024,7 +1024,7 @@ int main (){
 
                         max = trovak ( testo, rstack->nodip, 0 );
                         for ( ; i<=rstack->max-rstack->min; i++ ) {
-                            temp = CreaNodo ( rstack->testin[i], Tnull );
+                            temp = CreaNodo ( rstack->newTexts[i], Tnull );
                             testo = pInserisci ( testo, max, temp, 0 );
                             max = temp;
                             nnodi++;
@@ -1071,7 +1071,7 @@ int main (){
 						}
 					}
 				}
-				ustack = rstack;						//aggiorno la upila e la rpila
+				ustack = rstack;						//aggiorno la undoStack e la redoStack
                 rstack = rstack->rsucc;
                 mosse--;
             }
