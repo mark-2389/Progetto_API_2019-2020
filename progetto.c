@@ -3,71 +3,71 @@
 #include <string.h>
 #define M 1030				//buffer's limit
 
-typedef struct treeNode{
+typedef struct _treeNode_ {
 	int colour;				//colour red = 0, black = 1
 	int num;				//number of elements into the left subtree
 	char * row;				//text into the treeNode
-	struct treeNode * father;
-	struct treeNode * leftChild;
-	struct treeNode * rightChild;
+	struct _treeNode_ * father;
+	struct _treeNode_ * leftChild;
+	struct _treeNode_ * rightChild;
 } treeNode;
 
-typedef treeNode * tree;
+typedef treeNode * textTree;
 
-typedef struct uNode{
+typedef struct _uNode_ {
 	char operation;			//operation type
 	int min;				//min number (ind1)
 	int max;				//max number (ind2)
 	int nodip;				//numero di nodi appena prima la mossa
 	char ** oldTexts;		//vector of pointers to old texts
 	char ** newTexts;		//vector of pointers to nex texts
-	tree * subtree;			//vettore di puntatori al treeNode modificato
-	struct uNode * rsucc;
-	struct uNode * unext;
+	textTree * subtree;		//vettore di puntatori al treeNode modificato
+	struct _uNode_ * rsucc;
+	struct _uNode_ * unext;
 } uNode;
 
-typedef struct totti {
-	int pos;				//posizione nella upila o rpila
+typedef struct _photoNode_ {
+	int pos;				//position into the undoStack or redoStack
 	char type;
-	uNode * diretto;		//accesso diretto allo stato da ripristinare
-	struct totti * rdel;
-	struct totti * udel;
-} del;
+	uNode * direct;			//direct access to the state to be restored
+	struct _photoNode_ * rdel;
+	struct _photoNode_ * udel;
+} photoNode;
 
-typedef del * photo;
-typedef uNode * undoStack;		//this stack keeps track of all the modifying operation to the main structure (i.e. tree)
+typedef photoNode * photoList;
+typedef uNode * undoStack;		//this stack keeps track of all the modifying operation to the main structure (i.e. textTree)
 typedef uNode * redoStack;		//this stack keeps track of all the operations that con be re-executed after an undo
 
 						/*-------------------------*/
 						/* PROTOTIPI DELLE FUNZIONI*/
 						/*-------------------------*/
 
-tree Cancella ( tree tree, treeNode * canc );
-photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int unodi, int rnodi, int * mosse );
-tree CreaNodo ( char * testo, tree Tnull );
-photo dPush ( photo dlista, undoStack direct, int sum );
-tree eliminaNodoRosso ( tree tree, tree father, treeNode * elimina );
-tree LeftRotate ( tree alto, tree basso );
-tree pInserisci ( tree tree, treeNode * pre, treeNode * neo, int t );
-void print ( tree rb, int min, int max, int nnodi, int * stampati );
+textTree Cancella ( textTree tree, treeNode * canc );
+photoList CercaProx ( photoList * backup, undoStack * ustack, undoStack * rstack, int unodi, int rnodi, int * mosse );
+textTree CreaNodo ( char * testo, textTree Tnull );
+photoList dPush ( photoList dlista, undoStack direct, int sum );
+textTree eliminaNodoRosso ( textTree tree, textTree father, treeNode * elimina );
+textTree LeftRotate ( textTree alto, textTree basso );
+textTree pInserisci ( textTree tree, treeNode * pre, treeNode * neo, int t );
+void print ( textTree rb, int min, int max, int nnodi, int * stampati );
 undoStack Push ( undoStack stack, char op, int min, int max, int nnodi );
 int RaccogliIstr ( int * ind1, int * ind2, int * mosse, int * unodi, int * rnodi );
-tree Rigenera ( tree tree, tree Tnull, tree * max, undoStack stack );
-tree RightRotate ( tree alto, tree basso );
-tree Ripara ( tree tree, tree rb );
-tree Riparadx ( tree tree, tree nonno, tree zio, tree father, tree insert );
-tree RiparaNerodx ( tree tree, tree father, tree fratello, tree sost );
-tree RiparaNerosx ( tree tree, tree father, tree fratello, tree sost );
-tree Riparasx ( tree tree, tree nonno, tree zio, tree father, tree insert );
-tree trovak ( tree tree, int x, int flap );
-int VerificaFigli ( tree rb );
-void VisitaInOrdine ( tree rb, int min, int max, int nnodi, undoStack * ustack, int * visitati, int tot );
+textTree Rigenera ( textTree tree, textTree Tnull, textTree * max, undoStack stack );
+textTree RightRotate ( textTree alto, textTree basso );
+textTree Ripara ( textTree tree, textTree rb );
+textTree Riparadx ( textTree tree, textTree nonno, textTree zio, textTree father, textTree insert );
+textTree RiparaNerodx ( textTree tree, textTree father, textTree fratello, textTree sost );
+textTree RiparaNerosx ( textTree tree, textTree father, textTree fratello, textTree sost );
+textTree Riparasx ( textTree tree, textTree nonno, textTree zio, textTree father, textTree insert );
+textTree trovak ( textTree tree, int x, int flap );
+int VerificaFigli ( textTree rb );
+void VisitaInOrdine ( textTree rb, int min, int max, int nnodi, undoStack * ustack, int * visitati, int tot );
 
 							/*-----------------*/
 							/* INZIO PROGRAMMA*/
 							/*----------------*/
 
-tree Rigenera ( tree tree, tree Tnull, tree * max, undoStack stack ) {
+textTree Rigenera ( textTree tree, textTree Tnull, textTree * max, undoStack stack ) {
 	int i;
 
 	for ( i=0; i<stack->nodip; i++ ) {
@@ -83,9 +83,9 @@ tree Rigenera ( tree tree, tree Tnull, tree * max, undoStack stack ) {
 	return tree;
 }
 
-void VisitaInOrdine ( tree rb, int min, int max, int nnodi, undoStack * ustack, int * visitati, int tot ){
+void VisitaInOrdine ( textTree rb, int min, int max, int nnodi, undoStack * ustack, int * visitati, int tot ){
 	int count, a;
-	tree temp;
+	textTree temp;
 
 	if ( rb == NULL || rb->num == -1 || *visitati == tot )
 		return;
@@ -128,7 +128,7 @@ void VisitaInOrdine ( tree rb, int min, int max, int nnodi, undoStack * ustack, 
 	return VisitaInOrdine ( rb->rightChild, 1, max-count, nnodi-count, ustack, visitati, tot );
 }
 
-void print ( tree rb, int min, int max, int nnodi, int * stampati ){
+void print ( textTree rb, int min, int max, int nnodi, int * stampati ){
 	int count;
 
 	if ( rb == NULL || rb->num == -1 || *stampati == 0 )		//� stata stampata tutta la struttura o tutti i nodi necessari
@@ -140,7 +140,7 @@ void print ( tree rb, int min, int max, int nnodi, int * stampati ){
 
 	if ( count > min ){						//il piu piccolo treeNode da stampare nell'tree rb � nel sottoalbero sinistro
 
-		if ( rb->num < max )				//vanno stampati tutti i nodi del sottoalbero sinistro
+		if ( rb->num < max )				//vanno stampati tutti i nodi photoNode sottoalbero sinistro
 			print ( rb->leftChild, min, rb->num, rb->num, stampati );
 		else								//vanno stampati tutti i nodi fino a max
 			print ( rb->leftChild, min, max, rb->num, stampati );
@@ -150,16 +150,16 @@ void print ( tree rb, int min, int max, int nnodi, int * stampati ){
 	}
 
 	if ( rb->row != NULL )
-		fputs ( rb->row, stdout );			//stampo la row del treeNode corrente
+		fputs ( rb->row, stdout );			//stampo la row photoNode treeNode corrente
 	*stampati = *stampati-1;				//diminuisco il numero di elementi da stampare
 	if ( *stampati == 0 || nnodi == 1 )		//sono stati stampati tutti gli elementi
 		return;
-	return print ( rb->rightChild, 1, max-count, nnodi-count, stampati );	//bisogna stampare tutti i nodi da 1 fino a max-count del sottoalbero destro
+	return print ( rb->rightChild, 1, max-count, nnodi-count, stampati );	//bisogna stampare tutti i nodi da 1 fino a max-count photoNode sottoalbero destro
 }
 
-photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int unodi, int rnodi, int * mosse ){
+photoList CercaProx ( photoList * backup, undoStack * ustack, undoStack * rstack, int unodi, int rnodi, int * mosse ){
 	int a, b, tot=unodi+rnodi+1;
-	photo ptr, temp = *backup;
+	photoList ptr, temp = *backup;
 
 	if ( *mosse == 0 || temp == NULL )
 		return NULL;
@@ -176,7 +176,7 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 			temp->type = 'u';
 			if ( ptr == NULL ) {
 				*backup = temp;
-				*rstack = temp->diretto;
+				*rstack = temp->direct;
 				*ustack = (*rstack)->unext;
 				*mosse = unodi - temp->pos + 1;
 				return temp;
@@ -191,7 +191,7 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 			if ( *mosse <= b )
 				return NULL;
 			else {
-				*rstack = temp->diretto;
+				*rstack = temp->direct;
 				*ustack = (*rstack)->unext;
 				*mosse = -b;
 				return temp;
@@ -200,13 +200,13 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 		else {
 			a = unodi - temp->udel->pos + 1;
 			if ( a <= b ) {
-				*rstack = temp->udel->diretto;
+				*rstack = temp->udel->direct;
 				*ustack = (*rstack)->unext;
 				*mosse = a;
 				return temp->udel;
 			}
 			else {
-				*rstack = temp->diretto;
+				*rstack = temp->direct;
 				*ustack = (*rstack)->unext;
 				*mosse = -b;
 				return temp;
@@ -225,7 +225,7 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 		temp->type = 'r';
 		if ( ptr == NULL ){
 			*backup = temp;
-			*rstack = temp->diretto;
+			*rstack = temp->direct;
 			*ustack = (*rstack)->unext;
 			*mosse = temp->pos - rnodi;
 			return temp;
@@ -240,7 +240,7 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 		if ( -( *mosse ) <= b )
 			return NULL;
 		else {
-			*rstack = temp->diretto;
+			*rstack = temp->direct;
 			*ustack = (*rstack)->unext;
 			*mosse = b;
 			return temp;
@@ -250,13 +250,13 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 		a = rnodi - temp->rdel->pos;
 
 		if ( a <= b ){
-			*rstack = temp->rdel->diretto;
+			*rstack = temp->rdel->direct;
 			*ustack = (*rstack)->unext;
 			*mosse = -a;
 			return temp->rdel;
 		}
 		else {
-			*rstack = temp->diretto;
+			*rstack = temp->direct;
 			*ustack = (*rstack)->unext;
             *mosse = b;
 			return temp;
@@ -264,10 +264,10 @@ photo CercaProx ( photo * backup, undoStack * ustack, undoStack * rstack, int un
 	}
 }
 
-photo dPush ( photo dlista, undoStack direct, int num ) {
+photoList dPush ( photoList dlista, undoStack direct, int num ) {
 
-	photo temp = ( del * ) malloc ( sizeof ( del ) );
-	temp->diretto = direct;
+	photoList temp = ( photoNode * ) malloc ( sizeof ( photoNode ) );
+	temp->direct = direct;
 	temp->pos = num;
     temp->type = 'u';
 
@@ -296,7 +296,7 @@ undoStack Push ( undoStack stack, char op, int min, int max, int nnodi ){
 	return temp;
 }
 
-tree CreaNodo ( char * testo, tree Tnull ){
+textTree CreaNodo ( char * testo, textTree Tnull ){
 
 	treeNode * elem = (treeNode *) malloc ( sizeof ( treeNode ) );		//creo nuovo nodo
 	elem->colour = 0;
@@ -307,7 +307,7 @@ tree CreaNodo ( char * testo, tree Tnull ){
 	return elem;
 }
 
-int VerificaFigli ( tree rb ){
+int VerificaFigli ( textTree rb ){
 
 	if ( ( rb->leftChild )->num == -1 && ( rb->rightChild )->num == -1 )	//il nodo non ha figli
 		return 0;
@@ -318,14 +318,14 @@ int VerificaFigli ( tree rb ){
 	return 3;
 }
 
-tree LeftRotate ( tree alto, tree basso ){	//ROTAZIONE IN SENSO ANTIORARIO
+textTree LeftRotate ( textTree alto, textTree basso ){	//ROTAZIONE IN SENSO ANTIORARIO
 
 	alto->rightChild = basso->leftChild;				//aggancio sottoalbero sinistro
 	if ( (basso->leftChild)->num != -1 )
-		(basso->leftChild)->father = alto;			//sistemo father del sottoalbero
+		(basso->leftChild)->father = alto;			//sistemo father photoNode sottoalbero
 	basso->leftChild = alto;							//ruoto in senso antiorario
 	if ( ( alto->father )->num != -1 ){
-		if ( alto == (alto->father)->leftChild )		//sistemo il figlio del father
+		if ( alto == (alto->father)->leftChild )		//sistemo il figlio photoNode father
 			(alto->father)->leftChild = basso;
 		else
 			(alto->father)->rightChild = basso;
@@ -337,14 +337,14 @@ tree LeftRotate ( tree alto, tree basso ){	//ROTAZIONE IN SENSO ANTIORARIO
 	return basso;
 }
 
-tree RightRotate ( tree alto, tree basso ){	//ROTAZIONE IN SENSO ORARIO
+textTree RightRotate ( textTree alto, textTree basso ){	//ROTAZIONE IN SENSO ORARIO
 
 	alto->leftChild = basso->rightChild;				//aggancio sottoalbero destro
 	if ( (basso->rightChild)->num != -1 )
-		(basso->rightChild)->father = alto;			//sistemo riferimento al father del sottoalbero
+		(basso->rightChild)->father = alto;			//sistemo riferimento al father photoNode sottoalbero
 	basso->rightChild = alto;							//ruoto in senso orario
 
-	if ( ( alto->father )->num != -1 ){				//sistemo il figlio del father
+	if ( ( alto->father )->num != -1 ){				//sistemo il figlio photoNode father
 		if ( alto == (alto->father)->leftChild)
 			(alto->father)->leftChild = basso;
 		else
@@ -357,7 +357,7 @@ tree RightRotate ( tree alto, tree basso ){	//ROTAZIONE IN SENSO ORARIO
 	return basso;
 }
 
-tree Riparasx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//il father di insert � figlio sinistro del nonno
+textTree Riparasx ( textTree tree, textTree nonno, textTree zio, textTree father, textTree insert ){		//il father di insert � figlio sinistro photoNode nonno
 
 	if ( zio->num == -1 ){										//lo zio � una NULL LEAF
 
@@ -380,7 +380,7 @@ tree Riparasx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//
 	}
 
 	if ( zio->colour == 0 ){								//lo zio � di colour red
-		father->colour = 1;									//inverto i colori del nonno e dei suoi due figli
+		father->colour = 1;									//inverto i colori photoNode nonno e dei suoi due figli
 		zio->colour = 1;									//invoco la riparazione sul nonno per eventuali rotture di invariante
 		nonno->colour = 0;
 		tree = Ripara ( tree, nonno );
@@ -392,7 +392,7 @@ tree Riparasx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//
 		insert = father;
 		father = father->father;
 	}
-	father->colour = 1;										//inverto i colori del father e del nonno
+	father->colour = 1;										//inverto i colori photoNode father e photoNode nonno
 	nonno->colour = 0;
 
 	if ( ( nonno->father )->num == -1 )						//controllo se il nonno � la radice o meno
@@ -405,7 +405,7 @@ tree Riparasx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//
 	return tree;
 }
 
-tree Riparadx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//il father di insert � figlio destro del nonno
+textTree Riparadx ( textTree tree, textTree nonno, textTree zio, textTree father, textTree insert ){		//il father di insert � figlio destro photoNode nonno
 
 	if ( zio->num == -1 ){										//lo zio � una NULL LEAF
 
@@ -428,7 +428,7 @@ tree Riparadx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//
 	}
 
 	if ( zio->colour == 0 ){				//lo zio � red
-		father->colour = 1;					//inverto i colori del nonno e dei suoi due figli
+		father->colour = 1;					//inverto i colori photoNode nonno e dei suoi due figli
 		zio->colour = 1;					//invoco la riparazione sul nonno per trovare eventuali rotture di invarianti
 		nonno->colour = 0;
 		tree = Ripara ( tree, nonno );
@@ -440,7 +440,7 @@ tree Riparadx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//
 		insert = father;
 		father = father->father;
 	}
-	father->colour = 1;										//inverto i colori del father e del nonno
+	father->colour = 1;										//inverto i colori photoNode father e photoNode nonno
 	nonno->colour = 0;
 	if ( ( nonno->father )->num == -1 )
 		return LeftRotate ( nonno, father );
@@ -452,8 +452,8 @@ tree Riparadx ( tree tree, tree nonno, tree zio, tree father, tree insert ){		//
 	return tree;
 }
 
-tree Ripara ( tree tree, tree rb ){
-	tree zio, nonno, papa = rb->father;
+textTree Ripara ( textTree tree, textTree rb ){
+	textTree zio, nonno, papa = rb->father;
 
 	if ( papa->num == -1 ){						//l'elemento � la radice
 		rb->colour = 1;
@@ -464,19 +464,19 @@ tree Ripara ( tree tree, tree rb ){
 
 		nonno = papa->father;					//determino il nonno, necessario per riparare l'tree
 		if ( nonno->leftChild == papa  ){
-			zio = nonno->rightChild;				//il father di rb � figlio sinistro del nonno
+			zio = nonno->rightChild;				//il father di rb � figlio sinistro photoNode nonno
 			return Riparasx ( tree, nonno, zio, papa, rb );
 		}
 		else{
-			zio = nonno->leftChild;				//il father di rb � figlio destro del nonno
+			zio = nonno->leftChild;				//il father di rb � figlio destro photoNode nonno
 			return Riparadx ( tree, nonno, zio, papa, rb );
 		}
 	}
 	return tree;
 }
 
-tree pInserisci ( tree tree, treeNode * pre, treeNode * neo, int num ){		//inserimento particolare, solo per u e r
-	tree curr;
+textTree pInserisci ( textTree tree, treeNode * pre, treeNode * neo, int num ){		//inserimento particolare, solo per u e r
+	textTree curr;
 	neo->num = num;
 
 	if ( tree == NULL ){					//devo inserire un nodo in una struttra vuota
@@ -503,16 +503,16 @@ tree pInserisci ( tree tree, treeNode * pre, treeNode * neo, int num ){		//inser
 	}
 
 	neo->father = pre;
-	pre->leftChild = neo;					//inserisco neo come minimo del sottoalbero destro del predecessore
+	pre->leftChild = neo;					//inserisco neo come minimo photoNode sottoalbero destro photoNode predecessore
 	return Ripara ( tree, neo );
 }
 
-tree trovak ( tree tree, int x, int flap ){				//trova il k-esimo elemento della struttura
+textTree trovak ( textTree tree, int x, int flap ){				//trova il k-esimo elemento della struttura
 	int k;
 
 	if ( x <= 0 || tree == NULL )							//l'elemento cercato non � presente
 		return NULL;
-	k = tree->num+1;										//determino la posizione del treeNode corrente
+	k = tree->num+1;										//determino la posizione photoNode treeNode corrente
 	if ( k == x )											//� il treeNode cercato
 		return tree;
 	if ( k > x ){											//il treeNode cercato � nel sottoalbero sinistro
@@ -523,12 +523,12 @@ tree trovak ( tree tree, int x, int flap ){				//trova il k-esimo elemento della
 
 }
 
-tree eliminaNodoRosso ( tree tree, tree father, treeNode * elimina ){
-	tree temp;
+textTree eliminaNodoRosso ( textTree tree, textTree father, treeNode * elimina ){
+	textTree temp;
 
 	if ( (elimina->leftChild)->num == -1 && (elimina->rightChild)->num == -1 ){			//elimino un treeNode che non ha figli
 
-		if ( father->leftChild == elimina )									//sistemo il riferimento del father
+		if ( father->leftChild == elimina )									//sistemo il riferimento photoNode father
 			father->leftChild = elimina->leftChild;
 		else
 			father->rightChild = elimina->rightChild;
@@ -566,9 +566,9 @@ tree eliminaNodoRosso ( tree tree, tree father, treeNode * elimina ){
 	return Cancella ( tree, temp );								//e poi elimino il successore
 }
 
-tree RiparaNerosx ( tree tree, tree father, tree fratello, tree sost ){				//sost � figlio sinistro
+textTree RiparaNerosx ( textTree tree, textTree father, textTree fratello, textTree sost ){				//sost � figlio sinistro
 
-	if ( sost->colour == 1 )					//sost era red, eredita blackness del father
+	if ( sost->colour == 1 )					//sost era red, eredita blackness photoNode father
 		return tree;
 
 	if ( fratello->colour == 0 ){				//fratello � red
@@ -618,9 +618,9 @@ tree RiparaNerosx ( tree tree, tree father, tree fratello, tree sost ){				//sos
 	return tree;
 }
 
-tree RiparaNerodx ( tree tree, tree father, tree fratello, tree sost ){		//sost � figlio destro
+textTree RiparaNerodx ( textTree tree, textTree father, textTree fratello, textTree sost ){		//sost � figlio destro
 
-	if ( sost->colour == 1 )					//sost era red, eredita blackness del father
+	if ( sost->colour == 1 )					//sost era red, eredita blackness photoNode father
 		return tree;
 
 	if ( fratello->colour == 0 ){				//fratello � red
@@ -671,8 +671,8 @@ tree RiparaNerodx ( tree tree, tree father, tree fratello, tree sost ){		//sost 
 	return tree;
 }
 
-tree Cancella ( tree tree, treeNode * canc ){
-	tree temp, succ;
+textTree Cancella ( textTree tree, treeNode * canc ){
+	textTree temp, succ;
 	int sign;
 
 	if ( canc->colour == 0 )
@@ -683,7 +683,7 @@ tree Cancella ( tree tree, treeNode * canc ){
 
 	if ( temp->num != -1){
 
-		if ( temp->leftChild == canc ){					//canc � figlio sinistro del father
+		if ( temp->leftChild == canc ){					//canc � figlio sinistro photoNode father
 
 			if ( sign == 0 )						//non ha nessun figlio
 				temp->leftChild = canc->leftChild;
@@ -806,11 +806,11 @@ int RaccogliIstr ( int * ind1, int * ind2, int * mosse, int * unodi, int * rnodi
 }
 
 int main (){
-	tree testo = NULL, max = NULL, Tnull, temp;
+	textTree testo = NULL, max = NULL, Tnull, temp;
 	char *c, buff[M];
 	int flag=0, choice=0, start=0, finish=0, mosse=0,  nnodi=0, unodi=0, rnodi=0, i=0, t;
 	undoStack ustack = NULL, rstack = NULL;
-	photo photo=NULL, prova;
+	photoList photo=NULL, prova;
 
 	Tnull = ( treeNode * ) calloc ( 1, sizeof ( treeNode ) );
 	Tnull->colour = 1;
@@ -861,7 +861,7 @@ int main (){
 				photo = dPush ( photo, ustack, unodi );
 				i = 0;
 				ustack->oldTexts = ( char ** ) malloc ( nnodi * sizeof ( char * ) );
-				ustack->subtree = ( tree * ) malloc ( nnodi * sizeof ( tree ) );
+				ustack->subtree = ( textTree * ) malloc ( nnodi * sizeof ( textTree ) );
 				VisitaInOrdine ( testo, 1, nnodi, nnodi, &ustack, &i, nnodi );
 				while ( nnodi < finish ) {
 					temp = CreaNodo ( ustack->newTexts[nnodi-start+1], Tnull );
@@ -897,7 +897,7 @@ int main (){
 			unodi++;
 			photo = dPush ( photo, ustack, unodi );
 			ustack->oldTexts =  ( char ** ) malloc ( nnodi * sizeof ( char * ) );
-			ustack->subtree = ( tree * ) malloc ( nnodi * sizeof ( char * ) );
+			ustack->subtree = ( textTree * ) malloc ( nnodi * sizeof ( textTree ) );
 			i = 0;
             VisitaInOrdine ( testo, 1, nnodi, nnodi, &ustack, &i, nnodi );
 
@@ -968,8 +968,8 @@ int main (){
             if ( prova != NULL ) {
             	testo = NULL;
             	max = NULL;
-            	nnodi = prova->diretto->nodip;
-            	testo = Rigenera ( testo, Tnull, &max, prova->diretto );
+            	nnodi = prova->direct->nodip;
+            	testo = Rigenera ( testo, Tnull, &max, prova->direct );
 			}
 
 			while ( mosse < 0 && ustack != NULL ) {								//undo
